@@ -13,6 +13,13 @@ import {
   DEFAULT_ROLE_CONFIGS,
 } from "@raja-rani/shared";
 import { copyToClipboard } from "@/lib/clipboard";
+import { OrigamiChit3D } from "@/components/game/OrigamiChit3D";
+import { BrassBowlToss3D } from "@/components/game/BrassBowlToss3D";
+import { CardSwapModal3D } from "@/components/game/CardSwapModal3D";
+import { RoyalCourt3D } from "@/components/game/RoyalCourt3D";
+import { RoleClimaxOverlay3D, ClimaxType } from "@/components/game/RoleClimaxOverlay3D";
+import { VictoryCoinShower3D } from "@/components/game/VictoryCoinShower3D";
+import { sounds } from "@/lib/soundEffects";
 import {
   Crown,
   Shield,
@@ -28,6 +35,8 @@ import {
   Copy,
   Check,
   RefreshCw,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 export default function GameScreen() {
@@ -44,6 +53,40 @@ export default function GameScreen() {
   const [copied, setCopied] = useState(false);
   const [isChitFlipped, setIsChitFlipped] = useState(false);
 
+  // 3D Animation States
+  const [showBowlToss, setShowBowlToss] = useState(false);
+  const [lastTossedRound, setLastTossedRound] = useState<number | null>(null);
+  const [activeSwap, setActiveSwap] = useState<{
+    player1Name: string;
+    player2Name: string;
+    newRole: GameRole;
+    text: string;
+  } | null>(null);
+  const [climaxType, setClimaxType] = useState<ClimaxType>(null);
+  const [climaxPlayer, setClimaxPlayer] = useState<string>("");
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Auto trigger Kulukkal Bowl on every new round
+  useEffect(() => {
+    if (roomState?.state === "CHIT_PICKING" && roomState.currentRound !== lastTossedRound) {
+      setShowBowlToss(true);
+      setLastTossedRound(roomState.currentRound);
+    }
+  }, [roomState?.state, roomState?.currentRound, lastTossedRound]);
+
+  // Round results climax hook
+  useEffect(() => {
+    if (roomState?.state === "ROUND_RESULTS") {
+      if (roomState.lastGuessCorrect) {
+        setClimaxType("THIEF_CAPTURED");
+        const thief = roomState.players.find((p) => p.revealedRole === "THIRUDAN");
+        setClimaxPlayer(thief?.username || "Thirudan");
+      } else {
+        setClimaxType("THIEF_ESCAPED");
+      }
+    }
+  }, [roomState?.state, roomState?.lastGuessCorrect]);
+
   useEffect(() => {
     if (!socket || !roomCode || !user) return;
 
@@ -57,8 +100,14 @@ export default function GameScreen() {
       setMyChit(chit);
     });
 
-    socket.on("game:card-swapped", (swap) => {
-      setIsChitFlipped(true); // Automatically show flipped chit so player notices role change
+    socket.on("game:card-swapped", (swap: any) => {
+      setIsChitFlipped(true);
+      setActiveSwap({
+        player1Name: swap.player1Name,
+        player2Name: swap.player2Name,
+        newRole: swap.newRole,
+        text: swap.text || swap.message || "Cards have been swapped!",
+      });
     });
 
     socket.on("room:chat", (msg) => {
@@ -95,7 +144,14 @@ export default function GameScreen() {
   };
 
   const handleRevealKing = () => {
+    setClimaxType("CROWN_DESCEND");
+    setClimaxPlayer(user?.username || "Raja");
     socket?.emit("game:reveal-king");
+  };
+
+  const handleToggleMute = () => {
+    const muted = sounds.toggleMute();
+    setIsMuted(muted);
   };
 
   const handleMakeGuess = (suspectId: string) => {
@@ -153,6 +209,15 @@ export default function GameScreen() {
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span className="font-mono">{copied ? "Copied" : "Copy"}</span>
+              </button>
+
+              <button
+                onClick={handleToggleMute}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-300 text-xs flex items-center gap-1 transition"
+                title={isMuted ? "Unmute Sound" : "Mute Sound"}
+              >
+                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+                <span className="hidden sm:inline text-[11px]">{isMuted ? "Muted" : "Sound"}</span>
               </button>
             </div>
 
@@ -247,70 +312,33 @@ export default function GameScreen() {
           {/* ACTIVE PLAYING: CHIT PICKING & REVEAL */}
           {roomState.state !== "LOBBY" && (
             <div className="space-y-6">
-              {/* My Secret Paper Chit Box */}
+              {/* My Secret 3D Origami Paper Chit */}
               <div className="royal-glass p-6 rounded-3xl border border-amber-500/40 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-400" />
                     <h3 className="font-royal text-lg font-bold text-amber-300">
-                      Your Royal Chit (Secret)
+                      Your Royal Chit (3D Origami)
                     </h3>
                   </div>
-                  <button
-                    onClick={() => setIsChitFlipped(!isChitFlipped)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 bg-white/5 hover:bg-white/10 text-amber-200 transition flex items-center gap-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    {isChitFlipped ? "Fold Chit" : "Unfold Chit"}
-                  </button>
+                  <span className="text-[11px] text-amber-300/80 font-mono hidden sm:inline">
+                    Tilt device / cursor to shimmer
+                  </span>
                 </div>
 
                 {myChit ? (
-                  <div className="flex flex-col sm:flex-row items-center gap-6">
-                    {/* The Folded / Unfolded Paper Chit Component */}
-                    <div
-                      onClick={() => setIsChitFlipped(!isChitFlipped)}
-                      className={`w-64 h-36 p-5 rounded-2xl cursor-pointer paper-chit flex flex-col justify-between select-none ${
-                        isChitFlipped ? "rotate-0 scale-100" : "rotate-2 scale-95"
-                      }`}
-                    >
-                      {isChitFlipped ? (
-                        <>
-                          <div className="flex justify-between items-start">
-                            <span className="font-royal font-extrabold text-xs text-amber-800 tracking-wider">
-                              ROYAL CHIT
-                            </span>
-                            <span className="font-mono text-xs font-bold text-amber-700">
-                              {myChit.roleConfig.points} PTS
-                            </span>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-royal text-2xl font-black text-indigo-950">
-                              {myChit.roleConfig.name}
-                            </div>
-                            <div className="text-[11px] text-amber-900 mt-1">
-                              {myChit.roleConfig.description}
-                            </div>
-                          </div>
-                          <div className="text-[10px] text-center text-slate-500 uppercase tracking-widest">
-                            Keep Identity Secret
-                          </div>
-                        </>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center">
-                          <Crown className="w-8 h-8 text-amber-600 mb-1" />
-                          <div className="font-royal font-bold text-sm text-indigo-950">
-                            Folded Paper Chit
-                          </div>
-                          <div className="text-[10px] text-amber-800 mt-1">
-                            Click to unfold & read role
-                          </div>
-                        </div>
-                      )}
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    {/* 3D Tri-Fold Origami Paper Chit Component */}
+                    <div className="w-full max-w-sm">
+                      <OrigamiChit3D
+                        chit={myChit}
+                        isUnfolded={isChitFlipped}
+                        onToggleUnfold={() => setIsChitFlipped(!isChitFlipped)}
+                      />
                     </div>
 
-                    <div className="flex-1 space-y-2 text-xs text-slate-300">
-                      <p>
+                    <div className="flex-1 space-y-3 text-xs text-slate-300">
+                      <p className="bg-indigo-950/60 p-3 rounded-xl border border-amber-500/20">
                         <strong className="text-amber-300">Phase:</strong>{" "}
                         {roomState.state === "CHIT_PICKING" && "Waiting for Raja to reveal."}
                         {roomState.state === "GUESSING_PHASE" && (
@@ -324,10 +352,10 @@ export default function GameScreen() {
 
                       {/* King Action Button */}
                       {roomState.state === "CHIT_PICKING" && isMeKing && (
-                        <div className="pt-2">
+                        <div className="pt-1">
                           <button
                             onClick={handleRevealKing}
-                            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-indigo-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition animate-bounce"
+                            className="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 hover:from-amber-400 hover:to-yellow-200 text-indigo-950 font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/30 transition-transform active:scale-95 animate-bounce"
                           >
                             Crown Reveal: "I am Raja! Find Rani!"
                           </button>
@@ -367,74 +395,16 @@ export default function GameScreen() {
                 </div>
               )}
 
-              {/* Royal Court / Suspect Table */}
-              <div className="royal-glass p-6 rounded-3xl border border-amber-500/30">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
-                  <h3 className="font-royal text-lg font-bold text-amber-300 flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    The Royal Court
-                  </h3>
-
-                  {isMyTurnToGuess ? (
-                    <span className="text-xs px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 border-2 border-amber-400 font-bold animate-pulse shadow-md">
-                      🎯 YOUR TURN! Guess who has {roomState.currentTargetRole ? DEFAULT_ROLE_CONFIGS[roomState.currentTargetRole].name : "the role"}!
-                    </span>
-                  ) : (roomState.state === "GUESSING_PHASE" || roomState.state === "POLICE_GUESSING") ? (
-                    <span className="text-xs px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 font-semibold">
-                      ⏳ {currentGuesserPlayer?.username} ({roomState.currentGuesserRole ? DEFAULT_ROLE_CONFIGS[roomState.currentGuesserRole].name : "Guesser"}) is searching...
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                  {roomState.players.map((p) => {
-                    const isSelf = p.userId === user?.id;
-                    const isConfirmed =
-                      roomState.confirmedRoleUsers?.includes(p.userId) ||
-                      (p.revealedRole && p.userId !== roomState.currentGuesserId);
-                    const canGuess = isMyTurnToGuess && !isSelf && !isConfirmed;
-
-                    return (
-                      <div
-                        key={p.userId}
-                        onClick={() => canGuess && handleMakeGuess(p.userId)}
-                        className={`p-4 rounded-2xl flex flex-col items-center gap-2 relative transition ${
-                          canGuess
-                            ? "cursor-pointer hover:border-amber-400 hover:bg-amber-500/20 hover:scale-105 border-2 border-dashed border-amber-400 bg-amber-500/10 shadow-lg shadow-amber-500/10 animate-pulse"
-                            : p.revealedRole
-                            ? "border bg-amber-500/10 border-amber-400"
-                            : "border bg-slate-900/40 border-slate-800"
-                        }`}
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-bold text-base text-amber-300">
-                          {p.username.slice(0, 2).toUpperCase()}
-                        </div>
-
-                        <div className="text-xs font-bold truncate max-w-[110px] text-slate-200">
-                          {p.username}
-                        </div>
-
-                        <div className="text-[11px] font-mono text-amber-400">
-                          {p.score} Pts
-                        </div>
-
-                        {/* Revealed Role badge */}
-                        {p.revealedRole && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 font-bold uppercase">
-                            {p.revealedRole}
-                          </span>
-                        )}
-
-                        {canGuess && (
-                          <span className="text-[9px] text-amber-300 font-bold uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40">
-                            Guess as {roomState.currentTargetRole}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* 3D Royal Court Round-Table */}
+              <RoyalCourt3D
+                players={roomState.players}
+                currentGuesserId={roomState.currentGuesserId}
+                currentTargetRole={roomState.currentTargetRole}
+                confirmedRoleUsers={roomState.confirmedRoleUsers}
+                myUserId={user?.id}
+                isMyTurnToGuess={isMyTurnToGuess}
+                onSelectSuspect={handleMakeGuess}
+              />
 
               {/* Round Results Display */}
               {roomState.state === "ROUND_RESULTS" && (
@@ -570,6 +540,38 @@ export default function GameScreen() {
           </div>
         </div>
       </main>
+
+      {/* 3D Kulukkal Brass Bowl Toss Animation */}
+      <BrassBowlToss3D
+        isOpen={showBowlToss}
+        onComplete={() => setShowBowlToss(false)}
+      />
+
+      {/* 3D Mid-Air Card Swap Modal */}
+      <CardSwapModal3D
+        swapData={activeSwap || roomState.lastSwap || null}
+        onClose={() => setActiveSwap(null)}
+      />
+
+      {/* 3D Role Climax Overlay (Crown drop, Jail lock, Smoke escape) */}
+      <RoleClimaxOverlay3D
+        climaxType={climaxType}
+        playerName={climaxPlayer}
+        onClose={() => setClimaxType(null)}
+      />
+
+      {/* 3D Match Victory Coin Shower */}
+      {roomState.state === "MATCH_FINISHED" && (
+        <VictoryCoinShower3D
+          winnerName={
+            roomState.players.find((p) => p.userId === roomState.winnerPlayerId)?.username ||
+            "Champion"
+          }
+          finalScores={Object.fromEntries(roomState.players.map((p) => [p.userId, p.score]))}
+          isHost={isHost}
+          onRematch={handleRematch}
+        />
+      )}
     </div>
   );
 }

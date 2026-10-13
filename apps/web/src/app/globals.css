@@ -72,3 +72,128 @@ body {
 .animate-royal-glow {
   animation: royal-pulse 2.5s infinite;
 }
+
+/* 3D Transform Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1500 {
+  perspective: 1500px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 3D Origami Paper Flaps */
+.origami-flap-top {
+  transform-origin: top center;
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.origami-flap-bottom {
+  transform-origin: bottom center;
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Screen shake on card impact */
+@keyframes screen-quake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-4px, 3px) rotate(-1deg); }
+  40% { transform: translate(4px, -3px) rotate(1deg); }
+  60% { transform: translate(-3px, 1px) rotate(-0.5deg); }
+  80% { transform: translate(2px, -1px) rotate(0.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-screen-quake {
+  animation: screen-quake 0.4s ease-out;
+}
+
+/* Brass Bowl Shake Animation */
+@keyframes bowl-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-5deg) scale(1.03); }
+  30% { transform: rotate(5deg) scale(0.98); }
+  45% { transform: rotate(-6deg) scale(1.04); }
+  60% { transform: rotate(6deg) scale(0.99); }
+  75% { transform: rotate(-3deg) scale(1.02); }
+  90% { transform: rotate(3deg) scale(1); }
+}
+
+.animate-bowl-shake {
+  animation: bowl-shake 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+}
+
+/* 3D Wax Seal Crack Animation */
+@keyframes seal-break {
+  0% { transform: scale(1); opacity: 1; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+  40% { transform: scale(1.25); opacity: 0.9; }
+  100% { transform: scale(1.5) rotate(15deg); opacity: 0; filter: blur(4px); }
+}
+
+.animate-seal-break {
+  animation: seal-break 0.45s ease-out forwards;
+}
+
+/* 3D Card Swap Trail */
+@keyframes swap-arc-left {
+  0% { transform: translate3d(0, 0, 0) rotateY(0deg) scale(1); }
+  50% { transform: translate3d(120px, -60px, 100px) rotateY(180deg) scale(1.15); box-shadow: 0 25px 50px rgba(234, 179, 8, 0.5); }
+  100% { transform: translate3d(240px, 0, 0) rotateY(360deg) scale(1); }
+}
+
+@keyframes swap-arc-right {
+  0% { transform: translate3d(0, 0, 0) rotateY(0deg) scale(1); }
+  50% { transform: translate3d(-120px, 60px, 100px) rotateY(-180deg) scale(1.15); box-shadow: 0 25px 50px rgba(234, 179, 8, 0.5); }
+  100% { transform: translate3d(-240px, 0, 0) rotateY(-360deg) scale(1); }
+}
+
+.animate-swap-arc-left {
+  animation: swap-arc-left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-swap-arc-right {
+  animation: swap-arc-right 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Crown Drop Animation */
+@keyframes crown-descend {
+  0% { transform: translateY(-70px) scale(0.4) rotate(-15deg); opacity: 0; }
+  60% { transform: translateY(10px) scale(1.15) rotate(5deg); opacity: 1; }
+  80% { transform: translateY(-4px) scale(0.95) rotate(-2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-crown-descend {
+  animation: crown-descend 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Jail Bars Drop on Thief */
+@keyframes jail-slam {
+  0% { transform: translateY(-100%) scaleY(0.2); opacity: 0; }
+  70% { transform: translateY(5%) scaleY(1.05); opacity: 1; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+.animate-jail-slam {
+  animation: jail-slam 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Thief Escape Smoke Mist */
+@keyframes smoke-fade {
+  0% { transform: scale(0.6) rotate(0deg); opacity: 0.9; filter: blur(2px); }
+  50% { transform: scale(1.4) rotate(45deg); opacity: 0.6; filter: blur(8px); }
+  100% { transform: scale(2.2) rotate(90deg); opacity: 0; filter: blur(18px); }
+}
+
+.animate-smoke-fade {
+  animation: smoke-fade 1.2s ease-out forwards;
+}
+
