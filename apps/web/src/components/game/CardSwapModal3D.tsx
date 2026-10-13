@@ -31,7 +31,10 @@ export function CardSwapModal3D({ swapData, onClose }: CardSwapModal3DProps) {
   const roleName = DEFAULT_ROLE_CONFIGS[swapData.newRole]?.name || swapData.newRole;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-screen-quake p-4 select-none">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-screen-quake p-4 select-none cursor-pointer"
+    >
       <button
         onClick={onClose}
         className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 transition"
@@ -39,7 +42,10 @@ export function CardSwapModal3D({ swapData, onClose }: CardSwapModal3DProps) {
         <X className="w-5 h-5" />
       </button>
 
-      <div className="flex flex-col items-center justify-center text-center max-w-lg w-full">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-col items-center justify-center text-center max-w-lg w-full"
+      >
         {/* Floating 3D Badge */}
         <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 text-indigo-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/30 mb-8 animate-bounce">
           <RefreshCw className="w-4 h-4 animate-spin" />
@@ -84,6 +90,14 @@ export function CardSwapModal3D({ swapData, onClose }: CardSwapModal3DProps) {
         <div className="mt-8 p-4 rounded-2xl bg-amber-500/10 border border-amber-400/40 text-amber-100 text-sm sm:text-base font-semibold leading-relaxed max-w-md shadow-lg">
           {swapData.text}
         </div>
+
+        {/* Continue Button */}
+        <button
+          onClick={onClose}
+          className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-indigo-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/30 transition-transform active:scale-95"
+        >
+          Continue Turn ➔
+        </button>
       </div>
     </div>
   );

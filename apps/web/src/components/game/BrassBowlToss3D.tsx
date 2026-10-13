@@ -42,7 +42,10 @@ export function BrassBowlToss3D({ isOpen, onComplete }: BrassBowlToss3DProps) {
   if (!isOpen || phase === "done") return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in p-4 select-none">
+    <div
+      onClick={onComplete}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in p-4 select-none cursor-pointer"
+    >
       <button
         onClick={onComplete}
         className="absolute top-6 right-6 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 text-xs flex items-center gap-1.5 transition"

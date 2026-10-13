@@ -549,7 +549,7 @@ export default function GameScreen() {
 
       {/* 3D Mid-Air Card Swap Modal */}
       <CardSwapModal3D
-        swapData={activeSwap || roomState.lastSwap || null}
+        swapData={activeSwap}
         onClose={() => setActiveSwap(null)}
       />
 
