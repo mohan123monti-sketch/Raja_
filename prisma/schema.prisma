@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  playerCode   String   @unique
+  avatar       String   @default("crown_gold")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  ownedTeams          Team[]               @relation("TeamOwner")
+  teamMemberships     TeamMembership[]
+  gamePlayers         GamePlayer[]
+  hostedRooms         GameRoom[]           @relation("RoomHost")
+  playerStat          PlayerStat?
+
+  @@index([playerCode])
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+}
+
+model PlayerStat {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gamesPlayed Int      @default(0)
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  totalPoints Int      @default(0)
+  rating      Int      @default(1200)
+  updatedAt   DateTime @updatedAt
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  inviteCode  String   @unique
+  visibility  String   @default("PUBLIC") // PUBLIC or PRIVATE
+  ownerId     String
+  owner       User     @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships TeamMembership[]
+  rooms       GameRoom[]
+
+  @@index([inviteCode])
+}
+
+model TeamMembership {
+  id       String   @id @default(uuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joinedAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model GameRoom {
+  id             String   @id @default(uuid())
+  roomCode       String   @unique
+  hostId         String
+  host           User     @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+  isPrivate      Boolean  @default(false)
+  status         String   @default("LOBBY") // LOBBY, PLAYING, FINISHED
+  maxPlayers     Int      @default(5)
+  targetScore    Int      @default(3000)
+  roundsToPlay   Int      @default(5)
+  ruleConfigJson String?
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  players      GamePlayer[]
+  gameActions  GameAction[]
+  matchResults MatchResult[]
+
+  @@index([roomCode])
+}
+
+model GamePlayer {
+  id         String   @id @default(uuid())
+  gameRoomId String
+  gameRoom   GameRoom @relation(fields: [gameRoomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score      Int      @default(0)
+  isReady    Boolean  @default(false)
+  role       String?
+  status     String   @default("ACTIVE") // ACTIVE, DISCONNECTED
+  joinedAt   DateTime @default(now())
+
+  @@unique([gameRoomId, userId])
+}
+
+model GameAction {
+  id         String   @id @default(uuid())
+  gameRoomId String
+  gameRoom   GameRoom @relation(fields: [gameRoomId], references: [id], onDelete: Cascade)
+  playerId   String
+  actionType String
+  payload    String
+  round      Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  @@index([gameRoomId])
+}
+
+model MatchResult {
+  id             String   @id @default(uuid())
+  gameRoomId     String
+  gameRoom       GameRoom @relation(fields: [gameRoomId], references: [id], onDelete: Cascade)
+  winnerId       String?
+  totalRounds    Int      @default(1)
+  finalScoreJson String
+  completedAt    DateTime @default(now())
+
+  @@index([gameRoomId])
+}
